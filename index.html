@@ -18,7 +18,8 @@ h2{font-size:16px;margin:0 0 8px;color:#94a3b8}
 .nav b{font-size:18px;text-transform:capitalize}
 .resumo div{display:flex;justify-content:space-between;padding:4px 0}
 .resumo .total{border-top:1px solid #475569;margin-top:6px;padding-top:8px;font-size:18px;font-weight:700}
-.pos{color:#4ade80}.neg{color:#f87171}
+.resumo .sep{border-top:1px solid #475569;margin-top:8px;padding-top:10px;color:#94a3b8;font-size:13px;display:block}
+.pos{color:#4ade80}.neg{color:#f87171}.inv{color:#60a5fa}
 .item{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #334155}
 .item:last-child{border-bottom:0}
 .item input[type=checkbox]{width:22px;height:22px}
@@ -80,9 +81,19 @@ h2{font-size:16px;margin:0 0 8px;color:#94a3b8}
     <div class="form">
       <input id="dDesc" placeholder="Descrição">
       <input id="dValor" type="number" step="0.01" placeholder="Valor">
-      <select id="dTipo"><option value="gasto">Gasto</option><option value="ganho">Ganho</option></select>
+      <select id="dTipo">
+        <option value="gasto">Gasto</option>
+        <option value="ganho">Ganho</option>
+        <option value="investimento">Investimento</option>
+      </select>
       <button onclick="addDia()">+</button>
     </div>
+  </div>
+
+  <div class="card">
+    <h2>Investimentos</h2>
+    <div id="resumoInv"></div>
+    <div id="listaInv"></div>
   </div>
 
   <button class="btn2" onclick="trocarPin()">Trocar senha</button>
@@ -97,12 +108,12 @@ function salvar(){localStorage.setItem(CH,JSON.stringify(dados))}
 function chave(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')}
 function brl(v){return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+function soma(arr){return arr.reduce((s,x)=>s+x.valor,0)}
 
 function mesDe(k){
   if(dados.meses[k])return dados.meses[k];
   const [a,m]=k.split('-').map(Number);
-  const ant=new Date(a,m-2,1);
-  const kAnt=chave(ant);
+  const kAnt=chave(new Date(a,m-2,1));
   let novo={contas:[],ganhos:[],dia:[]};
   if(dados.meses[kAnt]){
     const p=dados.meses[kAnt];
@@ -112,19 +123,31 @@ function mesDe(k){
   dados.meses[k]=novo;salvar();return novo;
 }
 
+/* Efeito dos lançamentos do dia a dia no saldo: ganho soma, gasto e investimento tiram */
+function efeitoDia(d){return d.tipo==='ganho'?d.valor:-d.valor}
+
+/* SALDO REAL: só conta o que já foi pago e já foi recebido */
+function saldoRealFinal(k){
+  const mes=mesDe(k);
+  const recebido=soma(mes.ganhos.filter(g=>g.recebido));
+  const pago=soma(mes.contas.filter(c=>c.pago));
+  const dia=mes.dia.reduce((s,d)=>s+efeitoDia(d),0);
+  return saldoInicial(k)+recebido-pago+dia;
+}
+
+/* PREVISÃO: conta tudo, como se já tivesse acontecido */
+function previsaoFinal(k){
+  const mes=mesDe(k);
+  const dia=mes.dia.reduce((s,d)=>s+efeitoDia(d),0);
+  return saldoInicial(k)+soma(mes.ganhos)-soma(mes.contas)+dia;
+}
+
+/* A sobra que passa para o mês seguinte usa só o saldo real */
 function saldoInicial(k){
   const [a,m]=k.split('-').map(Number);
   const kAnt=chave(new Date(a,m-2,1));
   if(!dados.meses[kAnt])return 0;
-  return saldoFinal(kAnt);
-}
-
-function saldoFinal(k){
-  const mes=dados.meses[k];
-  const ganhos=mes.ganhos.reduce((s,g)=>s+g.valor,0);
-  const contas=mes.contas.reduce((s,c)=>s+c.valor,0);
-  const dia=mes.dia.reduce((s,d)=>s+(d.tipo==='ganho'?d.valor:-d.valor),0);
-  return saldoInicial(k)+ganhos-contas+dia;
+  return saldoRealFinal(kAnt);
 }
 
 function mudarMes(n){atual.setMonth(atual.getMonth()+n);render()}
@@ -165,31 +188,44 @@ function remover(lista,id){
   salvar();render();
 }
 
+function totalInvestido(){
+  let t=0;
+  Object.values(dados.meses).forEach(m=>{t+=soma(m.dia.filter(d=>d.tipo==='investimento'))});
+  return t;
+}
+
 function render(){
   const k=chave(atual);
   const mes=mesDe(k);
   document.getElementById('mesTitulo').textContent=atual.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
 
   const ini=saldoInicial(k);
-  const gan=mes.ganhos.reduce((s,g)=>s+g.valor,0);
-  const con=mes.contas.reduce((s,c)=>s+c.valor,0);
-  const dia=mes.dia.reduce((s,d)=>s+(d.tipo==='ganho'?d.valor:-d.valor),0);
-  const fim=ini+gan-con+dia;
-  const livre=ini+gan-con;
+  const ganPrev=soma(mes.ganhos);
+  const conPrev=soma(mes.contas);
+  const ganReal=soma(mes.ganhos.filter(g=>g.recebido));
+  const conReal=soma(mes.contas.filter(c=>c.pago));
+  const dia=mes.dia.reduce((s,d)=>s+efeitoDia(d),0);
+  const real=saldoRealFinal(k);
+  const prev=previsaoFinal(k);
+  const aReceber=ganPrev-ganReal;
+  const aPagar=conPrev-conReal;
 
   document.getElementById('resumo').innerHTML=
    `<div><span>Saldo inicial (sobra anterior)</span><span class="${ini<0?'neg':''}">${brl(ini)}</span></div>
-    <div><span>Ganhos fixos</span><span class="pos">${brl(gan)}</span></div>
-    <div><span>Contas fixas</span><span class="neg">${brl(con)}</span></div>
-    <div><span>Livre para gastar no mês</span><span>${brl(livre)}</span></div>
+    <div><span>Recebido até agora</span><span class="pos">${brl(ganReal)}</span></div>
+    <div><span>Pago até agora</span><span class="neg">${brl(conReal)}</span></div>
     <div><span>Dia a dia (líquido)</span><span class="${dia<0?'neg':'pos'}">${brl(dia)}</span></div>
-    <div class="total"><span>Sobra prevista</span><span class="${fim<0?'neg':'pos'}">${brl(fim)}</span></div>`;
+    <div class="total"><span>Saldo atual</span><span class="${real<0?'neg':'pos'}">${brl(real)}</span></div>
+    <span class="sep">PREVISÃO DO FIM DO MÊS</span>
+    <div><span>Ainda a receber</span><span class="pos">${brl(aReceber)}</span></div>
+    <div><span>Ainda a pagar</span><span class="neg">${brl(aPagar)}</span></div>
+    <div class="total"><span>Sobra prevista</span><span class="${prev<0?'neg':'pos'}">${brl(prev)}</span></div>`;
 
   const ord=(a,b)=>a.dia-b.dia;
   document.getElementById('listaContas').innerHTML=[...mes.contas].sort(ord).map(c=>
    `<div class="item ${c.pago?'ok':''}">
       <input type="checkbox" ${c.pago?'checked':''} onchange="marcar('contas','${c.id}')">
-      <div class="nome">${c.nome}<div class="sub">vence dia ${c.dia}</div></div>
+      <div class="nome">${c.nome}<div class="sub">vence dia ${c.dia} · ${c.pago?'pago':'a pagar'}</div></div>
       <span>${brl(c.valor)}</span>
       <button class="del" onclick="remover('contas','${c.id}')">✕</button>
     </div>`).join('')||'<div class="sub">Nenhuma conta.</div>';
@@ -197,17 +233,29 @@ function render(){
   document.getElementById('listaGanhos').innerHTML=[...mes.ganhos].sort(ord).map(g=>
    `<div class="item ${g.recebido?'ok':''}">
       <input type="checkbox" ${g.recebido?'checked':''} onchange="marcar('ganhos','${g.id}')">
-      <div class="nome">${g.nome}<div class="sub">dia ${g.dia}</div></div>
+      <div class="nome">${g.nome}<div class="sub">dia ${g.dia} · ${g.recebido?'recebido':'a receber'}</div></div>
       <span class="pos">${brl(g.valor)}</span>
       <button class="del" onclick="remover('ganhos','${g.id}')">✕</button>
     </div>`).join('')||'<div class="sub">Nenhum ganho.</div>';
 
+  const cor=t=>t==='ganho'?'pos':(t==='investimento'?'inv':'neg');
+  const sinal=t=>t==='ganho'?'+':'-';
   document.getElementById('listaDia').innerHTML=[...mes.dia].reverse().map(d=>
    `<div class="item">
-      <div class="nome">${d.desc}<div class="sub">${d.data}</div></div>
-      <span class="${d.tipo==='ganho'?'pos':'neg'}">${d.tipo==='ganho'?'+':'-'}${brl(d.valor)}</span>
+      <div class="nome">${d.desc}<div class="sub">${d.data} · ${d.tipo}</div></div>
+      <span class="${cor(d.tipo)}">${sinal(d.tipo)}${brl(d.valor)}</span>
       <button class="del" onclick="remover('dia','${d.id}')">✕</button>
     </div>`).join('')||'<div class="sub">Nada lançado ainda.</div>';
+
+  const invMes=mes.dia.filter(d=>d.tipo==='investimento');
+  document.getElementById('resumoInv').innerHTML=
+   `<div class="resumo"><div><span>Investido neste mês</span><span class="inv">${brl(soma(invMes))}</span></div>
+    <div><span>Total guardado (todos os meses)</span><span class="inv">${brl(totalInvestido())}</span></div></div>`;
+  document.getElementById('listaInv').innerHTML=[...invMes].reverse().map(d=>
+   `<div class="item">
+      <div class="nome">${d.desc}<div class="sub">${d.data}</div></div>
+      <span class="inv">${brl(d.valor)}</span>
+    </div>`).join('')||'<div class="sub">Nenhum investimento neste mês.</div>';
 }
 
 function mostrarTrava(){
