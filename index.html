@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Finanças">
+<meta name="theme-color" content="#0f172a">
+<title>Finanças</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,system-ui,sans-serif;background:#0f172a;color:#e2e8f0;padding:env(safe-area-inset-top) 14px 40px}
+h1{font-size:20px;margin:14px 0 8px}
+h2{font-size:16px;margin:0 0 8px;color:#94a3b8}
+.card{background:#1e293b;border-radius:14px;padding:14px;margin:12px 0}
+.nav{display:flex;align-items:center;justify-content:space-between;margin-top:14px}
+.nav button{background:#334155;color:#fff;border:0;border-radius:10px;padding:8px 14px;font-size:16px}
+.nav b{font-size:18px;text-transform:capitalize}
+.resumo div{display:flex;justify-content:space-between;padding:4px 0}
+.resumo .total{border-top:1px solid #475569;margin-top:6px;padding-top:8px;font-size:18px;font-weight:700}
+.pos{color:#4ade80}.neg{color:#f87171}
+.item{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #334155}
+.item:last-child{border-bottom:0}
+.item input[type=checkbox]{width:22px;height:22px}
+.item .nome{flex:1}
+.item .sub{font-size:12px;color:#94a3b8}
+.item.ok .nome{text-decoration:line-through;opacity:.5}
+.del{background:none;border:0;color:#f87171;font-size:18px}
+.form{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.form input,.form select{flex:1;min-width:80px;padding:9px;border-radius:8px;border:0;background:#0f172a;color:#fff;font-size:15px}
+.form button{background:#2563eb;color:#fff;border:0;border-radius:8px;padding:9px 14px;font-size:15px}
+.btn2{background:#334155;color:#fff;border:0;border-radius:10px;padding:10px;width:100%;font-size:14px;margin-top:8px}
+#trava{position:fixed;inset:0;background:#0f172a;z-index:9;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+#trava input{font-size:28px;text-align:center;width:160px;padding:10px;border-radius:10px;border:0;letter-spacing:8px}
+#trava button{background:#2563eb;color:#fff;border:0;border-radius:10px;padding:10px 24px;font-size:16px}
+</style>
+</head>
+<body>
+
+<div id="trava">
+  <h1 id="travaTitulo">Digite sua senha</h1>
+  <input id="pin" type="password" inputmode="numeric" maxlength="4">
+  <button onclick="checarPin()">Entrar</button>
+</div>
+
+<div id="app">
+  <div class="nav">
+    <button onclick="mudarMes(-1)">‹</button>
+    <b id="mesTitulo"></b>
+    <button onclick="mudarMes(1)">›</button>
+  </div>
+
+  <div class="card resumo" id="resumo"></div>
+
+  <div class="card">
+    <h2>Contas fixas do mês</h2>
+    <div id="listaContas"></div>
+    <div class="form">
+      <input id="cNome" placeholder="Conta">
+      <input id="cDia" type="number" min="1" max="31" placeholder="Dia">
+      <input id="cValor" type="number" step="0.01" placeholder="Valor">
+      <button onclick="addFixo('contas')">+</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Ganhos fixos do mês</h2>
+    <div id="listaGanhos"></div>
+    <div class="form">
+      <input id="gNome" placeholder="Ganho">
+      <input id="gDia" type="number" min="1" max="31" placeholder="Dia">
+      <input id="gValor" type="number" step="0.01" placeholder="Valor">
+      <button onclick="addFixo('ganhos')">+</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Dia a dia</h2>
+    <div id="listaDia"></div>
+    <div class="form">
+      <input id="dDesc" placeholder="Descrição">
+      <input id="dValor" type="number" step="0.01" placeholder="Valor">
+      <select id="dTipo"><option value="gasto">Gasto</option><option value="ganho">Ganho</option></select>
+      <button onclick="addDia()">+</button>
+    </div>
+  </div>
+
+  <button class="btn2" onclick="trocarPin()">Trocar senha</button>
+</div>
+
+<script>
+const CH='financas_v1';
+let dados=JSON.parse(localStorage.getItem(CH)||'{"pin":null,"meses":{}}');
+let atual=new Date();atual.setDate(1);
+
+function salvar(){localStorage.setItem(CH,JSON.stringify(dados))}
+function chave(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')}
+function brl(v){return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+
+function mesDe(k){
+  if(dados.meses[k])return dados.meses[k];
+  const [a,m]=k.split('-').map(Number);
+  const ant=new Date(a,m-2,1);
+  const kAnt=chave(ant);
+  let novo={contas:[],ganhos:[],dia:[]};
+  if(dados.meses[kAnt]){
+    const p=dados.meses[kAnt];
+    novo.contas=p.contas.map(c=>({...c,id:uid(),pago:false}));
+    novo.ganhos=p.ganhos.map(g=>({...g,id:uid(),recebido:false}));
+  }
+  dados.meses[k]=novo;salvar();return novo;
+}
+
+function saldoInicial(k){
+  const [a,m]=k.split('-').map(Number);
+  const kAnt=chave(new Date(a,m-2,1));
+  if(!dados.meses[kAnt])return 0;
+  return saldoFinal(kAnt);
+}
+
+function saldoFinal(k){
+  const mes=dados.meses[k];
+  const ganhos=mes.ganhos.reduce((s,g)=>s+g.valor,0);
+  const contas=mes.contas.reduce((s,c)=>s+c.valor,0);
+  const dia=mes.dia.reduce((s,d)=>s+(d.tipo==='ganho'?d.valor:-d.valor),0);
+  return saldoInicial(k)+ganhos-contas+dia;
+}
+
+function mudarMes(n){atual.setMonth(atual.getMonth()+n);render()}
+
+function addFixo(tipo){
+  const p=tipo==='contas'?'c':'g';
+  const nome=document.getElementById(p+'Nome').value.trim();
+  const dia=parseInt(document.getElementById(p+'Dia').value);
+  const valor=parseFloat(document.getElementById(p+'Valor').value);
+  if(!nome||!dia||isNaN(valor))return alert('Preencha nome, dia e valor.');
+  const mes=mesDe(chave(atual));
+  mes[tipo].push(tipo==='contas'?{id:uid(),nome,dia,valor,pago:false}:{id:uid(),nome,dia,valor,recebido:false});
+  ['Nome','Dia','Valor'].forEach(x=>document.getElementById(p+x).value='');
+  salvar();render();
+}
+
+function addDia(){
+  const desc=document.getElementById('dDesc').value.trim();
+  const valor=parseFloat(document.getElementById('dValor').value);
+  const tipo=document.getElementById('dTipo').value;
+  if(!desc||isNaN(valor))return alert('Preencha descrição e valor.');
+  const hoje=new Date().toLocaleDateString('pt-BR');
+  mesDe(chave(atual)).dia.push({id:uid(),desc,valor,tipo,data:hoje});
+  document.getElementById('dDesc').value='';document.getElementById('dValor').value='';
+  salvar();render();
+}
+
+function marcar(lista,id){
+  const it=mesDe(chave(atual))[lista].find(x=>x.id===id);
+  if(lista==='contas')it.pago=!it.pago;else it.recebido=!it.recebido;
+  salvar();render();
+}
+
+function remover(lista,id){
+  if(!confirm('Remover este item?'))return;
+  const mes=mesDe(chave(atual));
+  mes[lista]=mes[lista].filter(x=>x.id!==id);
+  salvar();render();
+}
+
+function render(){
+  const k=chave(atual);
+  const mes=mesDe(k);
+  document.getElementById('mesTitulo').textContent=atual.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+
+  const ini=saldoInicial(k);
+  const gan=mes.ganhos.reduce((s,g)=>s+g.valor,0);
+  const con=mes.contas.reduce((s,c)=>s+c.valor,0);
+  const dia=mes.dia.reduce((s,d)=>s+(d.tipo==='ganho'?d.valor:-d.valor),0);
+  const fim=ini+gan-con+dia;
+  const livre=ini+gan-con;
+
+  document.getElementById('resumo').innerHTML=
+   `<div><span>Saldo inicial (sobra anterior)</span><span class="${ini<0?'neg':''}">${brl(ini)}</span></div>
+    <div><span>Ganhos fixos</span><span class="pos">${brl(gan)}</span></div>
+    <div><span>Contas fixas</span><span class="neg">${brl(con)}</span></div>
+    <div><span>Livre para gastar no mês</span><span>${brl(livre)}</span></div>
+    <div><span>Dia a dia (líquido)</span><span class="${dia<0?'neg':'pos'}">${brl(dia)}</span></div>
+    <div class="total"><span>Sobra prevista</span><span class="${fim<0?'neg':'pos'}">${brl(fim)}</span></div>`;
+
+  const ord=(a,b)=>a.dia-b.dia;
+  document.getElementById('listaContas').innerHTML=[...mes.contas].sort(ord).map(c=>
+   `<div class="item ${c.pago?'ok':''}">
+      <input type="checkbox" ${c.pago?'checked':''} onchange="marcar('contas','${c.id}')">
+      <div class="nome">${c.nome}<div class="sub">vence dia ${c.dia}</div></div>
+      <span>${brl(c.valor)}</span>
+      <button class="del" onclick="remover('contas','${c.id}')">✕</button>
+    </div>`).join('')||'<div class="sub">Nenhuma conta.</div>';
+
+  document.getElementById('listaGanhos').innerHTML=[...mes.ganhos].sort(ord).map(g=>
+   `<div class="item ${g.recebido?'ok':''}">
+      <input type="checkbox" ${g.recebido?'checked':''} onchange="marcar('ganhos','${g.id}')">
+      <div class="nome">${g.nome}<div class="sub">dia ${g.dia}</div></div>
+      <span class="pos">${brl(g.valor)}</span>
+      <button class="del" onclick="remover('ganhos','${g.id}')">✕</button>
+    </div>`).join('')||'<div class="sub">Nenhum ganho.</div>';
+
+  document.getElementById('listaDia').innerHTML=[...mes.dia].reverse().map(d=>
+   `<div class="item">
+      <div class="nome">${d.desc}<div class="sub">${d.data}</div></div>
+      <span class="${d.tipo==='ganho'?'pos':'neg'}">${d.tipo==='ganho'?'+':'-'}${brl(d.valor)}</span>
+      <button class="del" onclick="remover('dia','${d.id}')">✕</button>
+    </div>`).join('')||'<div class="sub">Nada lançado ainda.</div>';
+}
+
+function mostrarTrava(){
+  const t=document.getElementById('trava');
+  t.style.display='flex';
+  document.getElementById('app').style.display='none';
+  document.getElementById('travaTitulo').textContent=dados.pin?'Digite sua senha':'Crie uma senha de 4 dígitos';
+}
+
+function checarPin(){
+  const v=document.getElementById('pin').value;
+  if(v.length!==4)return alert('Use 4 dígitos.');
+  if(!dados.pin){dados.pin=v;salvar();}
+  else if(dados.pin!==v){document.getElementById('pin').value='';return alert('Senha incorreta.');}
+  document.getElementById('pin').value='';
+  document.getElementById('trava').style.display='none';
+  document.getElementById('app').style.display='block';
+  render();
+}
+
+function trocarPin(){
+  const n=prompt('Nova senha de 4 dígitos:');
+  if(n&&/^\d{4}$/.test(n)){dados.pin=n;salvar();alert('Senha alterada.');}
+  else if(n!==null)alert('A senha precisa ter 4 números.');
+}
+
+mostrarTrava();
+</script>
+</body>
+</html>
