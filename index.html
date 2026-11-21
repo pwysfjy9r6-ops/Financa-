@@ -4,111 +4,161 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Finanças">
-<meta name="theme-color" content="#0f172a">
+<meta name="theme-color" content="#0b1020">
 <title>Finanças</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,system-ui,sans-serif;background:#0f172a;color:#e2e8f0;padding:env(safe-area-inset-top) 14px 40px}
-h1{font-size:20px;margin:14px 0 8px}
-h2{font-size:16px;margin:0 0 8px;color:#94a3b8}
-.card{background:#1e293b;border-radius:14px;padding:14px;margin:12px 0}
-.nav{display:flex;align-items:center;justify-content:space-between;margin-top:14px}
-.nav button{background:#334155;color:#fff;border:0;border-radius:10px;padding:8px 14px;font-size:16px}
-.nav b{font-size:18px;text-transform:capitalize}
-.resumo div{display:flex;justify-content:space-between;padding:4px 0}
-.resumo .total{border-top:1px solid #475569;margin-top:6px;padding-top:8px;font-size:18px;font-weight:700}
-.resumo .sep{border-top:1px solid #475569;margin-top:8px;padding-top:10px;color:#94a3b8;font-size:13px;display:block}
-.pos{color:#4ade80}.neg{color:#f87171}.inv{color:#60a5fa}
-.item{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #334155}
-.item:last-child{border-bottom:0}
-.item input[type=checkbox]{width:22px;height:22px}
-.item .nome{flex:1}
-.item .sub{font-size:12px;color:#94a3b8}
-.item.ok .nome{text-decoration:line-through;opacity:.5}
-.del{background:none;border:0;color:#f87171;font-size:18px}
-.form{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
-.form input,.form select{flex:1;min-width:80px;padding:9px;border-radius:8px;border:0;background:#0f172a;color:#fff;font-size:15px}
-.form button{background:#2563eb;color:#fff;border:0;border-radius:8px;padding:9px 14px;font-size:15px}
-.btn2{background:#334155;color:#fff;border:0;border-radius:10px;padding:10px;width:100%;font-size:14px;margin-top:8px}
-#trava{position:fixed;inset:0;background:#0f172a;z-index:9;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px}
-#trava input{font-size:28px;text-align:center;width:160px;padding:10px;border-radius:10px;border:0;letter-spacing:8px}
-#trava button{background:#2563eb;color:#fff;border:0;border-radius:10px;padding:10px 24px;font-size:16px}
+:root{--bg:#0b1020;--card:#151b2e;--card2:#1c2440;--txt:#eef2ff;--mut:#8b95b5;--line:#252e4a;--verde:#34d399;--verm:#fb7185;--azul:#60a5fa;--roxo:#a78bfa;--amar:#fbbf24}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,sans-serif;background:var(--bg);color:var(--txt);padding:calc(env(safe-area-inset-top) + 8px) 16px calc(env(safe-area-inset-bottom) + 96px);min-height:100vh}
+.topo{display:flex;align-items:center;justify-content:space-between;margin:8px 0 14px}
+.topo button{width:40px;height:40px;border-radius:50%;border:0;background:var(--card);color:var(--txt);font-size:22px}
+.topo .mes{text-align:center}
+.topo .mes b{display:block;font-size:20px;text-transform:capitalize}
+.topo .mes small{color:var(--mut);font-size:12px}
+.aba{display:none}.aba.on{display:block}
+.hero{background:linear-gradient(135deg,#4f46e5,#7c3aed);border-radius:22px;padding:20px;margin-bottom:14px;box-shadow:0 10px 30px rgba(79,70,229,.35)}
+.hero small{opacity:.8;font-size:13px}
+.hero .big{font-size:36px;font-weight:800;margin:4px 0 12px;letter-spacing:-1px}
+.hero .linha{display:flex;justify-content:space-between;font-size:13px;opacity:.95;padding-top:10px;border-top:1px solid rgba(255,255,255,.25)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.mini{background:var(--card);border-radius:16px;padding:14px}
+.mini small{color:var(--mut);font-size:12px;display:block}
+.mini b{font-size:18px;display:block;margin-top:4px}
+.card{background:var(--card);border-radius:18px;padding:14px;margin-bottom:14px}
+.card h2{font-size:15px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+.card h2 span{font-size:12px;color:var(--mut);font-weight:400}
+.item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.item:last-of-type{border-bottom:0}
+.chk{appearance:none;-webkit-appearance:none;width:26px;height:26px;border-radius:50%;border:2px solid var(--mut);flex-shrink:0;display:grid;place-content:center;background:transparent}
+.chk:checked{background:var(--verde);border-color:var(--verde)}
+.chk:checked::after{content:'✓';color:#062;font-weight:900;font-size:15px}
+.item .nome{flex:1;min-width:0}
+.item .nome div:first-child{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .sub{font-size:12px;color:var(--mut);margin-top:2px}
+.item .val{font-weight:600;font-size:15px}
+.item.ok .nome div:first-child{text-decoration:line-through;opacity:.45}
+.item.ok .val{opacity:.45}
+.item.venc{background:rgba(251,113,133,.09);margin:0 -14px;padding:12px 14px;border-left:3px solid var(--verm)}
+.item.venc .sub{color:var(--verm);font-weight:600}
+.item.hoje .sub{color:var(--amar);font-weight:600}
+.del{background:none;border:0;color:var(--mut);font-size:18px;padding:4px}
+.pos{color:var(--verde)}.neg{color:var(--verm)}.inv{color:var(--azul)}
+.vazio{color:var(--mut);font-size:13px;padding:10px 0}
+.form{display:grid;grid-template-columns:1fr 70px 100px 44px;gap:8px;margin-top:12px}
+.form.dia{grid-template-columns:1fr 100px;}
+.form.dia select{grid-column:1/2}
+.form input,.form select{padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font-size:15px;min-width:0}
+.form button{background:var(--roxo);color:#fff;border:0;border-radius:12px;font-size:22px}
+.form.dia button{grid-column:2/3}
+.btn2{background:var(--card);color:var(--mut);border:0;border-radius:14px;padding:14px;width:100%;font-size:14px}
+.tab{position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom) + 10px);background:rgba(21,27,46,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-radius:24px;display:flex;padding:8px;border:1px solid var(--line);z-index:5}
+.tab button{flex:1;background:none;border:0;color:var(--mut);padding:8px 2px;border-radius:16px;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:3px}
+.tab button i{font-style:normal;font-size:20px}
+.tab button.on{background:var(--card2);color:var(--txt)}
+#trava{position:fixed;inset:0;background:var(--bg);z-index:9;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+#trava .ico{font-size:48px}
+#trava input{font-size:30px;text-align:center;width:180px;padding:12px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--txt);letter-spacing:10px}
+#trava button{background:var(--roxo);color:#fff;border:0;border-radius:14px;padding:12px 32px;font-size:16px}
 </style>
 </head>
 <body>
 
 <div id="trava">
+  <div class="ico">🔒</div>
   <h1 id="travaTitulo">Digite sua senha</h1>
   <input id="pin" type="password" inputmode="numeric" maxlength="4">
   <button onclick="checarPin()">Entrar</button>
 </div>
 
 <div id="app">
-  <div class="nav">
+  <div class="topo">
     <button onclick="mudarMes(-1)">‹</button>
-    <b id="mesTitulo"></b>
+    <div class="mes"><b id="mesTitulo"></b><small id="mesSub"></small></div>
     <button onclick="mudarMes(1)">›</button>
   </div>
 
-  <div class="card resumo" id="resumo"></div>
+  <section class="aba on" id="aba-resumo">
+    <div class="hero" id="hero"></div>
+    <div class="grid" id="grid"></div>
+    <div class="card" id="alertas"></div>
+    <button class="btn2" onclick="trocarPin()">Trocar senha</button>
+  </section>
 
-  <div class="card">
-    <h2>Contas fixas do mês</h2>
-    <div id="listaContas"></div>
-    <div class="form">
-      <input id="cNome" placeholder="Conta">
-      <input id="cDia" type="number" min="1" max="31" placeholder="Dia">
-      <input id="cValor" type="number" step="0.01" placeholder="Valor">
-      <button onclick="addFixo('contas')">+</button>
+  <section class="aba" id="aba-contas">
+    <div class="card">
+      <h2>Contas fixas <span id="contasInfo"></span></h2>
+      <div id="listaContas"></div>
+      <div class="form">
+        <input id="cNome" placeholder="Conta">
+        <input id="cDia" type="number" min="1" max="31" placeholder="Dia">
+        <input id="cValor" type="number" step="0.01" placeholder="Valor">
+        <button onclick="addFixo('contas')">+</button>
+      </div>
     </div>
-  </div>
-
-  <div class="card">
-    <h2>Ganhos fixos do mês</h2>
-    <div id="listaGanhos"></div>
-    <div class="form">
-      <input id="gNome" placeholder="Ganho">
-      <input id="gDia" type="number" min="1" max="31" placeholder="Dia">
-      <input id="gValor" type="number" step="0.01" placeholder="Valor">
-      <button onclick="addFixo('ganhos')">+</button>
+    <div class="card">
+      <h2>Ganhos fixos <span id="ganhosInfo"></span></h2>
+      <div id="listaGanhos"></div>
+      <div class="form">
+        <input id="gNome" placeholder="Ganho">
+        <input id="gDia" type="number" min="1" max="31" placeholder="Dia">
+        <input id="gValor" type="number" step="0.01" placeholder="Valor">
+        <button onclick="addFixo('ganhos')">+</button>
+      </div>
     </div>
-  </div>
+  </section>
 
-  <div class="card">
-    <h2>Dia a dia</h2>
-    <div id="listaDia"></div>
-    <div class="form">
-      <input id="dDesc" placeholder="Descrição">
-      <input id="dValor" type="number" step="0.01" placeholder="Valor">
-      <select id="dTipo">
-        <option value="gasto">Gasto</option>
-        <option value="ganho">Ganho</option>
-        <option value="investimento">Investimento</option>
-      </select>
-      <button onclick="addDia()">+</button>
+  <section class="aba" id="aba-dia">
+    <div class="card">
+      <h2>Lançamentos do dia a dia</h2>
+      <div class="form dia">
+        <input id="dDesc" placeholder="Descrição" style="grid-column:1/3">
+        <input id="dValor" type="number" step="0.01" placeholder="Valor">
+        <select id="dTipo">
+          <option value="gasto">Gasto</option>
+          <option value="ganho">Ganho</option>
+          <option value="investimento">Investimento</option>
+        </select>
+        <button onclick="addDia()" style="grid-column:1/3;padding:12px;font-size:16px">Adicionar</button>
+      </div>
     </div>
-  </div>
+    <div class="card"><div id="listaDia"></div></div>
+  </section>
 
-  <div class="card">
-    <h2>Investimentos</h2>
-    <div id="resumoInv"></div>
-    <div id="listaInv"></div>
-  </div>
-
-  <button class="btn2" onclick="trocarPin()">Trocar senha</button>
+  <section class="aba" id="aba-inv">
+    <div class="hero" style="background:linear-gradient(135deg,#2563eb,#0ea5e9);box-shadow:0 10px 30px rgba(37,99,235,.35)" id="heroInv"></div>
+    <div class="card"><h2>Investimentos do mês</h2><div id="listaInv"></div></div>
+  </section>
 </div>
+
+<nav class="tab" id="tab">
+  <button class="on" onclick="aba('resumo')"><i>🏠</i>Resumo</button>
+  <button onclick="aba('contas')"><i>📅</i>Contas</button>
+  <button onclick="aba('dia')"><i>✏️</i>Dia a dia</button>
+  <button onclick="aba('inv')"><i>📈</i>Investir</button>
+</nav>
 
 <script>
 const CH='financas_v1';
 let dados=JSON.parse(localStorage.getItem(CH)||'{"pin":null,"meses":{}}');
 let atual=new Date();atual.setDate(1);
+const ABAS=['resumo','contas','dia','inv'];
 
 function salvar(){localStorage.setItem(CH,JSON.stringify(dados))}
 function chave(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')}
 function brl(v){return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
 function soma(arr){return arr.reduce((s,x)=>s+x.valor,0)}
+function esc(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+function aba(nome){
+  ABAS.forEach((a,i)=>{
+    document.getElementById('aba-'+a).classList.toggle('on',a===nome);
+    document.querySelectorAll('#tab button')[i].classList.toggle('on',a===nome);
+  });
+  window.scrollTo(0,0);
+}
 
 function mesDe(k){
   if(dados.meses[k])return dados.meses[k];
@@ -123,31 +173,32 @@ function mesDe(k){
   dados.meses[k]=novo;salvar();return novo;
 }
 
-/* Efeito dos lançamentos do dia a dia no saldo: ganho soma, gasto e investimento tiram */
 function efeitoDia(d){return d.tipo==='ganho'?d.valor:-d.valor}
 
-/* SALDO REAL: só conta o que já foi pago e já foi recebido */
 function saldoRealFinal(k){
   const mes=mesDe(k);
-  const recebido=soma(mes.ganhos.filter(g=>g.recebido));
-  const pago=soma(mes.contas.filter(c=>c.pago));
-  const dia=mes.dia.reduce((s,d)=>s+efeitoDia(d),0);
-  return saldoInicial(k)+recebido-pago+dia;
+  return saldoInicial(k)+soma(mes.ganhos.filter(g=>g.recebido))-soma(mes.contas.filter(c=>c.pago))+mes.dia.reduce((s,d)=>s+efeitoDia(d),0);
 }
-
-/* PREVISÃO: conta tudo, como se já tivesse acontecido */
 function previsaoFinal(k){
   const mes=mesDe(k);
-  const dia=mes.dia.reduce((s,d)=>s+efeitoDia(d),0);
-  return saldoInicial(k)+soma(mes.ganhos)-soma(mes.contas)+dia;
+  return saldoInicial(k)+soma(mes.ganhos)-soma(mes.contas)+mes.dia.reduce((s,d)=>s+efeitoDia(d),0);
 }
-
-/* A sobra que passa para o mês seguinte usa só o saldo real */
 function saldoInicial(k){
   const [a,m]=k.split('-').map(Number);
   const kAnt=chave(new Date(a,m-2,1));
   if(!dados.meses[kAnt])return 0;
   return saldoRealFinal(kAnt);
+}
+
+/* situação do vencimento: 'venc' (já passou), 'hoje' ou 'prox' */
+function situacao(dia){
+  const hoje=new Date();
+  const k=chave(atual),kh=chave(new Date(hoje.getFullYear(),hoje.getMonth(),1));
+  if(k<kh)return 'venc';
+  if(k>kh)return 'prox';
+  if(dia<hoje.getDate())return 'venc';
+  if(dia===hoje.getDate())return 'hoje';
+  return 'prox';
 }
 
 function mudarMes(n){atual.setMonth(atual.getMonth()+n);render()}
@@ -157,7 +208,7 @@ function addFixo(tipo){
   const nome=document.getElementById(p+'Nome').value.trim();
   const dia=parseInt(document.getElementById(p+'Dia').value);
   const valor=parseFloat(document.getElementById(p+'Valor').value);
-  if(!nome||!dia||isNaN(valor))return alert('Preencha nome, dia e valor.');
+  if(!nome||!dia||dia<1||dia>31||isNaN(valor))return alert('Preencha nome, dia (1 a 31) e valor.');
   const mes=mesDe(chave(atual));
   mes[tipo].push(tipo==='contas'?{id:uid(),nome,dia,valor,pago:false}:{id:uid(),nome,dia,valor,recebido:false});
   ['Nome','Dia','Valor'].forEach(x=>document.getElementById(p+x).value='');
@@ -169,8 +220,7 @@ function addDia(){
   const valor=parseFloat(document.getElementById('dValor').value);
   const tipo=document.getElementById('dTipo').value;
   if(!desc||isNaN(valor))return alert('Preencha descrição e valor.');
-  const hoje=new Date().toLocaleDateString('pt-BR');
-  mesDe(chave(atual)).dia.push({id:uid(),desc,valor,tipo,data:hoje});
+  mesDe(chave(atual)).dia.push({id:uid(),desc,valor,tipo,data:new Date().toLocaleDateString('pt-BR')});
   document.getElementById('dDesc').value='';document.getElementById('dValor').value='';
   salvar();render();
 }
@@ -194,74 +244,90 @@ function totalInvestido(){
   return t;
 }
 
+function linhaFixa(x,lista,okCampo,txtOk,txtPend,corVal){
+  const feito=x[okCampo];
+  const s=feito?'ok':situacao(x.dia);
+  const cls=feito?'ok':(s==='venc'?'venc':(s==='hoje'?'hoje':''));
+  let sub;
+  if(feito)sub=`dia ${x.dia} · ${txtOk}`;
+  else if(s==='venc')sub=`dia ${x.dia} · ${lista==='contas'?'VENCIDA':'ATRASADO'} — ${txtPend}`;
+  else if(s==='hoje')sub=`dia ${x.dia} · É HOJE — ${txtPend}`;
+  else sub=`dia ${x.dia} · ${txtPend}`;
+  return `<div class="item ${cls}">
+    <input class="chk" type="checkbox" ${feito?'checked':''} onchange="marcar('${lista}','${x.id}')">
+    <div class="nome"><div>${esc(x.nome)}</div><div class="sub">${sub}</div></div>
+    <div class="val ${corVal}">${brl(x.valor)}</div>
+    <button class="del" onclick="remover('${lista}','${x.id}')">✕</button>
+  </div>`;
+}
+
 function render(){
   const k=chave(atual);
   const mes=mesDe(k);
-  document.getElementById('mesTitulo').textContent=atual.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+  document.getElementById('mesTitulo').textContent=atual.toLocaleDateString('pt-BR',{month:'long'});
+  document.getElementById('mesSub').textContent=atual.getFullYear();
 
   const ini=saldoInicial(k);
-  const ganPrev=soma(mes.ganhos);
-  const conPrev=soma(mes.contas);
-  const ganReal=soma(mes.ganhos.filter(g=>g.recebido));
-  const conReal=soma(mes.contas.filter(c=>c.pago));
+  const ganPrev=soma(mes.ganhos),conPrev=soma(mes.contas);
+  const ganReal=soma(mes.ganhos.filter(g=>g.recebido)),conReal=soma(mes.contas.filter(c=>c.pago));
   const dia=mes.dia.reduce((s,d)=>s+efeitoDia(d),0);
-  const real=saldoRealFinal(k);
-  const prev=previsaoFinal(k);
-  const aReceber=ganPrev-ganReal;
-  const aPagar=conPrev-conReal;
+  const real=saldoRealFinal(k),prev=previsaoFinal(k);
 
-  document.getElementById('resumo').innerHTML=
-   `<div><span>Saldo inicial (sobra anterior)</span><span class="${ini<0?'neg':''}">${brl(ini)}</span></div>
-    <div><span>Recebido até agora</span><span class="pos">${brl(ganReal)}</span></div>
-    <div><span>Pago até agora</span><span class="neg">${brl(conReal)}</span></div>
-    <div><span>Dia a dia (líquido)</span><span class="${dia<0?'neg':'pos'}">${brl(dia)}</span></div>
-    <div class="total"><span>Saldo atual</span><span class="${real<0?'neg':'pos'}">${brl(real)}</span></div>
-    <span class="sep">PREVISÃO DO FIM DO MÊS</span>
-    <div><span>Ainda a receber</span><span class="pos">${brl(aReceber)}</span></div>
-    <div><span>Ainda a pagar</span><span class="neg">${brl(aPagar)}</span></div>
-    <div class="total"><span>Sobra prevista</span><span class="${prev<0?'neg':'pos'}">${brl(prev)}</span></div>`;
+  document.getElementById('hero').innerHTML=
+   `<small>Saldo atual</small>
+    <div class="big">${brl(real)}</div>
+    <div class="linha"><span>Sobra prevista no fim do mês</span><b>${brl(prev)}</b></div>`;
+
+  document.getElementById('grid').innerHTML=
+   `<div class="mini"><small>Saldo inicial</small><b class="${ini<0?'neg':''}">${brl(ini)}</b></div>
+    <div class="mini"><small>Dia a dia</small><b class="${dia<0?'neg':'pos'}">${brl(dia)}</b></div>
+    <div class="mini"><small>Recebido</small><b class="pos">${brl(ganReal)}</b></div>
+    <div class="mini"><small>Pago</small><b class="neg">${brl(conReal)}</b></div>
+    <div class="mini"><small>Ainda a receber</small><b class="pos">${brl(ganPrev-ganReal)}</b></div>
+    <div class="mini"><small>Ainda a pagar</small><b class="neg">${brl(conPrev-conReal)}</b></div>`;
+
+  const vencContas=mes.contas.filter(c=>!c.pago&&situacao(c.dia)==='venc');
+  const hojeContas=mes.contas.filter(c=>!c.pago&&situacao(c.dia)==='hoje');
+  const vencGanhos=mes.ganhos.filter(g=>!g.recebido&&situacao(g.dia)==='venc');
+  let al='<h2>Atenção</h2>';
+  vencContas.forEach(c=>al+=`<div class="item venc"><div class="nome"><div>${esc(c.nome)}</div><div class="sub">VENCIDA no dia ${c.dia}</div></div><div class="val neg">${brl(c.valor)}</div></div>`);
+  hojeContas.forEach(c=>al+=`<div class="item hoje"><div class="nome"><div>${esc(c.nome)}</div><div class="sub">Vence hoje</div></div><div class="val">${brl(c.valor)}</div></div>`);
+  vencGanhos.forEach(g=>al+=`<div class="item hoje"><div class="nome"><div>${esc(g.nome)}</div><div class="sub">Era para cair no dia ${g.dia}. Já recebeu?</div></div><div class="val pos">${brl(g.valor)}</div></div>`);
+  if(!vencContas.length&&!hojeContas.length&&!vencGanhos.length)al+='<div class="vazio">Tudo em dia por aqui. 🎉</div>';
+  document.getElementById('alertas').innerHTML=al;
 
   const ord=(a,b)=>a.dia-b.dia;
-  document.getElementById('listaContas').innerHTML=[...mes.contas].sort(ord).map(c=>
-   `<div class="item ${c.pago?'ok':''}">
-      <input type="checkbox" ${c.pago?'checked':''} onchange="marcar('contas','${c.id}')">
-      <div class="nome">${c.nome}<div class="sub">vence dia ${c.dia} · ${c.pago?'pago':'a pagar'}</div></div>
-      <span>${brl(c.valor)}</span>
-      <button class="del" onclick="remover('contas','${c.id}')">✕</button>
-    </div>`).join('')||'<div class="sub">Nenhuma conta.</div>';
-
-  document.getElementById('listaGanhos').innerHTML=[...mes.ganhos].sort(ord).map(g=>
-   `<div class="item ${g.recebido?'ok':''}">
-      <input type="checkbox" ${g.recebido?'checked':''} onchange="marcar('ganhos','${g.id}')">
-      <div class="nome">${g.nome}<div class="sub">dia ${g.dia} · ${g.recebido?'recebido':'a receber'}</div></div>
-      <span class="pos">${brl(g.valor)}</span>
-      <button class="del" onclick="remover('ganhos','${g.id}')">✕</button>
-    </div>`).join('')||'<div class="sub">Nenhum ganho.</div>';
+  document.getElementById('contasInfo').textContent=`${mes.contas.filter(c=>c.pago).length}/${mes.contas.length} pagas`;
+  document.getElementById('ganhosInfo').textContent=`${mes.ganhos.filter(g=>g.recebido).length}/${mes.ganhos.length} recebidos`;
+  document.getElementById('listaContas').innerHTML=[...mes.contas].sort(ord).map(c=>linhaFixa(c,'contas','pago','pago','a pagar','')).join('')||'<div class="vazio">Nenhuma conta cadastrada.</div>';
+  document.getElementById('listaGanhos').innerHTML=[...mes.ganhos].sort(ord).map(g=>linhaFixa(g,'ganhos','recebido','recebido','a receber','pos')).join('')||'<div class="vazio">Nenhum ganho cadastrado.</div>';
 
   const cor=t=>t==='ganho'?'pos':(t==='investimento'?'inv':'neg');
   const sinal=t=>t==='ganho'?'+':'-';
   document.getElementById('listaDia').innerHTML=[...mes.dia].reverse().map(d=>
    `<div class="item">
-      <div class="nome">${d.desc}<div class="sub">${d.data} · ${d.tipo}</div></div>
-      <span class="${cor(d.tipo)}">${sinal(d.tipo)}${brl(d.valor)}</span>
+      <div class="nome"><div>${esc(d.desc)}</div><div class="sub">${d.data} · ${d.tipo}</div></div>
+      <div class="val ${cor(d.tipo)}">${sinal(d.tipo)}${brl(d.valor)}</div>
       <button class="del" onclick="remover('dia','${d.id}')">✕</button>
-    </div>`).join('')||'<div class="sub">Nada lançado ainda.</div>';
+    </div>`).join('')||'<div class="vazio">Nada lançado neste mês.</div>';
 
   const invMes=mes.dia.filter(d=>d.tipo==='investimento');
-  document.getElementById('resumoInv').innerHTML=
-   `<div class="resumo"><div><span>Investido neste mês</span><span class="inv">${brl(soma(invMes))}</span></div>
-    <div><span>Total guardado (todos os meses)</span><span class="inv">${brl(totalInvestido())}</span></div></div>`;
+  document.getElementById('heroInv').innerHTML=
+   `<small>Total guardado</small>
+    <div class="big">${brl(totalInvestido())}</div>
+    <div class="linha"><span>Investido neste mês</span><b>${brl(soma(invMes))}</b></div>`;
   document.getElementById('listaInv').innerHTML=[...invMes].reverse().map(d=>
    `<div class="item">
-      <div class="nome">${d.desc}<div class="sub">${d.data}</div></div>
-      <span class="inv">${brl(d.valor)}</span>
-    </div>`).join('')||'<div class="sub">Nenhum investimento neste mês.</div>';
+      <div class="nome"><div>${esc(d.desc)}</div><div class="sub">${d.data}</div></div>
+      <div class="val inv">${brl(d.valor)}</div>
+      <button class="del" onclick="remover('dia','${d.id}')">✕</button>
+    </div>`).join('')||'<div class="vazio">Nenhum investimento neste mês. Lance pela aba Dia a dia.</div>';
 }
 
 function mostrarTrava(){
-  const t=document.getElementById('trava');
-  t.style.display='flex';
+  document.getElementById('trava').style.display='flex';
   document.getElementById('app').style.display='none';
+  document.getElementById('tab').style.display='none';
   document.getElementById('travaTitulo').textContent=dados.pin?'Digite sua senha':'Crie uma senha de 4 dígitos';
 }
 
@@ -273,6 +339,7 @@ function checarPin(){
   document.getElementById('pin').value='';
   document.getElementById('trava').style.display='none';
   document.getElementById('app').style.display='block';
+  document.getElementById('tab').style.display='flex';
   render();
 }
 
