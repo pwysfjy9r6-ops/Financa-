@@ -180,6 +180,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,sans-s
           <option value="gasto">Gasto</option>
           <option value="ganho">Ganho</option>
           <option value="investimento">Investimento</option>
+          <option value="resgate">Resgate</option>
         </select>
         <select id="dForma"></select>
         <select id="dCat"></select>
@@ -195,6 +196,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,sans-s
           <option value="gasto">Gastos</option>
           <option value="ganho">Ganhos</option>
           <option value="investimento">Investimentos</option>
+          <option value="resgate">Resgates</option>
         </select>
         <select id="fForma" onchange="render()">
           <option value="">Todas as formas</option>
@@ -210,7 +212,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,sans-s
   <section class="aba" id="aba-inv">
     <div class="hero" style="background:linear-gradient(135deg,#2563eb,#0ea5e9);box-shadow:0 14px 34px rgba(37,99,235,.38)" id="heroInv"></div>
     <div class="card" id="invPorCat"></div>
-    <div class="card"><h2>Investimentos do mês</h2><div id="listaInv"></div></div>
+    <div class="card"><h2>Movimentos do mês</h2><div id="listaInv"></div></div>
   </section>
 
   <section class="aba" id="aba-ano">
@@ -231,6 +233,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,sans-s
       <div class="form2">
         <input id="novaCatGasto" placeholder="Nova categoria de gasto">
         <button class="sec" style="grid-column:2/3" onclick="addCat('gasto')">Adicionar</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Categorias de ganhos</h2>
+      <div class="chips" id="chipsGanho"></div>
+      <div class="form2">
+        <input id="novaCatGanho" placeholder="Nova categoria de ganho">
+        <button class="sec" style="grid-column:2/3" onclick="addCat('ganho')">Adicionar</button>
       </div>
     </div>
     <div class="card">
@@ -269,7 +279,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,sans-s
   </section>
 </div>
 
-<!-- Janela de edição de contas e ganhos fixos -->
 <div class="modal" id="modalEdit">
   <div class="box">
     <h3>Editar</h3>
@@ -284,7 +293,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,sans-s
   </div>
 </div>
 
-<!-- Janela de remoção: só este mês ou deste mês em diante -->
 <div class="modal" id="modalDel">
   <div class="box">
     <h3 id="delTitulo">Remover</h3>
@@ -297,7 +305,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,sans-s
   </div>
 </div>
 
-<!-- Janela da meta de uma categoria de investimento -->
 <div class="modal" id="modalMeta">
   <div class="box">
     <h3 id="metaTitulo">Meta</h3>
@@ -318,6 +325,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,sans-s
   <button onclick="aba('ano')"><i>🗓️</i>Ano</button>
   <button onclick="aba('mais')"><i>⚙️</i>Mais</button>
 </nav>
+
 <script>
 const CH='financas_v1';
 let dados=JSON.parse(localStorage.getItem(CH)||'{}');
@@ -329,6 +337,7 @@ dados.fixos=dados.fixos||[];
 dados.marcas=dados.marcas||{};
 dados.ocultos=dados.ocultos||{};
 dados.catsGasto=dados.catsGasto||['Mercado','Transporte','Lazer','Alimentação','Saúde','Casa','Compras','Outros'];
+dados.catsGanho=dados.catsGanho||[];
 dados.catsInv=dados.catsInv||['Reserva de emergência','Estudos','Viagem','Aposentadoria','Outros'];
 dados.metasInv=dados.metasInv||{};
 dados.tema=dados.tema||'escuro';
@@ -366,11 +375,13 @@ function alternarTema(){
 aplicarTema();
 
 /* ---------- CATEGORIAS EDITÁVEIS ---------- */
+function listaCats(tipo){return tipo==='gasto'?dados.catsGasto:(tipo==='ganho'?dados.catsGanho:dados.catsInv)}
 function addCat(tipo){
-  const campo=document.getElementById(tipo==='gasto'?'novaCatGasto':'novaCatInv');
+  const ids={gasto:'novaCatGasto',ganho:'novaCatGanho',inv:'novaCatInv'};
+  const campo=document.getElementById(ids[tipo]);
   const nome=campo.value.trim();
   if(!nome)return;
-  const lista=tipo==='gasto'?dados.catsGasto:dados.catsInv;
+  const lista=listaCats(tipo);
   if(lista.some(c=>c.toLowerCase()===nome.toLowerCase()))return alert('Essa categoria já existe.');
   lista.push(nome);
   campo.value='';
@@ -379,6 +390,7 @@ function addCat(tipo){
 function removerCat(tipo,nome){
   if(!confirm('Remover a categoria "'+nome+'"? Lançamentos antigos continuam registrados com esse nome.'))return;
   if(tipo==='gasto')dados.catsGasto=dados.catsGasto.filter(c=>c!==nome);
+  else if(tipo==='ganho')dados.catsGanho=dados.catsGanho.filter(c=>c!==nome);
   else dados.catsInv=dados.catsInv.filter(c=>c!==nome);
   salvar();render();ajustaForm();
 }
@@ -473,8 +485,9 @@ function creditoAcumulado(k){
 }
 
 /* ---------- SALDOS ---------- */
+/* ganho e resgate entram no saldo; gasto e investimento saem; gasto no crédito vira fatura */
 function efeitoDia(d){
-  if(d.tipo==='ganho')return d.valor;
+  if(d.tipo==='ganho'||d.tipo==='resgate')return d.valor;
   if(d.tipo==='gasto'&&d.forma==='Crédito')return 0;
   return -d.valor;
 }
@@ -518,13 +531,14 @@ function situacao(dia){
 function mudarMes(n){atual.setMonth(atual.getMonth()+n);render()}
 function mudarAno(n){anoVer+=n;render()}
 
-/* ---------- INVESTIMENTOS POR CATEGORIA ---------- */
+/* ---------- INVESTIMENTOS POR CATEGORIA (investido menos resgatado) ---------- */
 function invPorCategoria(){
   const tot={};
   Object.values(dados.meses).forEach(m=>{
-    (m.dia||[]).filter(d=>d.tipo==='investimento').forEach(d=>{
+    (m.dia||[]).forEach(d=>{
+      if(d.tipo!=='investimento'&&d.tipo!=='resgate')return;
       const c=d.cat||'Sem categoria';
-      tot[c]=(tot[c]||0)+d.valor;
+      tot[c]=(tot[c]||0)+(d.tipo==='investimento'?d.valor:-d.valor);
     });
   });
   return tot;
@@ -545,6 +559,7 @@ function salvarMetaCat(){
   salvar();fecharModais();render();
 }
 </script>
+
 <script>
 /* ---------- AÇÕES: FIXOS ---------- */
 function addFixo(tipo){
@@ -638,17 +653,18 @@ function ajustaForm(){
   const t=document.getElementById('dTipo').value;
   const f=document.getElementById('dForma'),c=document.getElementById('dCat');
   const fAnt=f.value,cAnt=c.value;
-  const lista=t==='ganho'?FORMAS_GANHO:(t==='investimento'?['Pix','Transferência']:FORMAS_GASTO);
+  let lista,cats=null;
+  if(t==='ganho'){lista=FORMAS_GANHO;cats=dados.catsGanho;}
+  else if(t==='investimento'){lista=['Pix','Transferência'];cats=dados.catsInv;}
+  else if(t==='resgate'){lista=['Pix','Transferência'];cats=dados.catsInv;}
+  else{lista=FORMAS_GASTO;cats=dados.catsGasto;}
   f.innerHTML=lista.map(x=>`<option>${x}</option>`).join('');
-  if(t==='gasto'){
-    c.innerHTML=dados.catsGasto.map(x=>`<option>${esc(x)}</option>`).join('');
-    c.style.display='block';
-  }else if(t==='investimento'){
-    c.innerHTML=dados.catsInv.map(x=>`<option>${esc(x)}</option>`).join('');
+  if(cats&&cats.length){
+    c.innerHTML=(t==='ganho'?'<option value="">Sem categoria</option>':'')+cats.map(x=>`<option>${esc(x)}</option>`).join('');
     c.style.display='block';
   }else{
-    c.innerHTML='<option>—</option>';
-    c.style.display='none';
+    c.innerHTML='<option value="">Sem categoria</option>';
+    c.style.display=t==='ganho'?'block':'none';
   }
   if(lista.includes(fAnt))f.value=fAnt;
   if([...c.options].some(o=>o.value===cAnt))c.value=cAnt;
@@ -659,8 +675,9 @@ function addDia(){
   const valor=parseFloat(document.getElementById('dValor').value);
   const tipo=document.getElementById('dTipo').value;
   const forma=document.getElementById('dForma').value;
-  const cat=(tipo==='gasto'||tipo==='investimento')?document.getElementById('dCat').value:'';
+  const cat=document.getElementById('dCat').value||'';
   if(!desc||isNaN(valor))return alert('Preencha descrição e valor.');
+  if(tipo==='resgate'&&!cat)return alert('Escolha de qual categoria de investimento saiu o dinheiro.');
   const mes=mesDe(chave(atual));
   if(editDiaId){
     const d=mes.dia.find(x=>x.id===editDiaId);
@@ -736,6 +753,7 @@ function importar(ev){
       dados.meta=dados.meta||0;dados.cartao=dados.cartao||{fecha:7,vence:14};
       dados.fixos=dados.fixos||[];dados.marcas=dados.marcas||{};dados.ocultos=dados.ocultos||{};
       dados.catsGasto=dados.catsGasto||['Mercado','Transporte','Lazer','Alimentação','Saúde','Casa','Compras','Outros'];
+      dados.catsGanho=dados.catsGanho||[];
       dados.catsInv=dados.catsInv||['Reserva de emergência','Estudos','Viagem','Aposentadoria','Outros'];
       dados.metasInv=dados.metasInv||{};dados.tema=dados.tema||'escuro';
       salvar();migrar();aplicarTema();render();alert('Backup restaurado.');
@@ -755,7 +773,7 @@ function aba(nome){
   window.scrollTo(0,0);
 }
 
-function linhaFixa(x,lista,txtOk,txtPend,corVal,ic){
+function linhaFixa(x,lista,txtOk,txtPend,corVal){
   const s=x.feito?'ok':situacao(x.dia);
   const cls=x.feito?'ok':(s==='venc'?'venc':(s==='hoje'?'hoje':''));
   let sub;
@@ -775,6 +793,7 @@ function linhaFixa(x,lista,txtOk,txtPend,corVal,ic){
 }
 
 function chipsHtml(lista,tipo){
+  if(!lista.length)return '<div class="vazio" style="padding:0">Nenhuma categoria ainda. Adicione abaixo.</div>';
   return lista.map(c=>`<div class="chip"><span>${icone(c)} ${esc(c)}</span><button onclick="removerCat('${tipo}','${esc(c).replace(/'/g,'&#39;')}')">✕</button></div>`).join('');
 }
 
@@ -856,18 +875,20 @@ function render(){
   document.getElementById('listaContas').innerHTML=[...contas].sort(ord).map(c=>linhaFixa(c,'contas','pago','a pagar','')).join('')||'<div class="vazio">Nenhuma conta neste mês.</div>';
   document.getElementById('listaGanhos').innerHTML=[...ganhos].sort(ord).map(g=>linhaFixa(g,'ganhos','recebido','a receber','pos')).join('')||'<div class="vazio">Nenhum ganho neste mês.</div>';
 
+  /* dia a dia com filtros */
   const selCat=document.getElementById('fCat');
   const catAnt=selCat.value;
-  const todasCats=[...new Set([...dados.catsGasto,...dados.catsInv])];
+  const todasCats=[...new Set([...dados.catsGasto,...dados.catsGanho,...dados.catsInv])];
   selCat.innerHTML='<option value="">Todas as categorias</option>'+todasCats.map(c=>`<option>${esc(c)}</option>`).join('');
   selCat.value=catAnt;
   const fT=document.getElementById('fTipo').value,fF=document.getElementById('fForma').value,fC=selCat.value;
   const lista=[...mes.dia].filter(d=>(!fT||d.tipo===fT)&&(!fF||d.forma===fF)&&(!fC||d.cat===fC)).reverse();
-  const cor=d=>d.tipo==='ganho'?'pos':(d.tipo==='investimento'?'inv':(d.forma==='Crédito'?'cre':'neg'));
-  const sinal=t=>t==='ganho'?'+':'-';
+  const cor=d=>(d.tipo==='ganho'||d.tipo==='resgate')?'pos':(d.tipo==='investimento'?'inv':(d.forma==='Crédito'?'cre':'neg'));
+  const sinal=t=>(t==='ganho'||t==='resgate')?'+':'-';
+  const icDia=d=>d.tipo==='ganho'?'💰':(d.tipo==='resgate'?'↩️':icone(d.cat||'Outros'));
   document.getElementById('listaDia').innerHTML=lista.map(d=>
    `<div class="item">
-      <div class="ic">${d.tipo==='ganho'?'💰':icone(d.cat||'Outros')}</div>
+      <div class="ic">${icDia(d)}</div>
       <div class="nome"><div>${esc(d.desc)}</div><div class="sub">${d.data} · ${d.tipo}${d.forma?' · '+d.forma:''}${d.cat?' · '+esc(d.cat):''}</div></div>
       <div class="val ${cor(d)}">${sinal(d.tipo)}${brl(d.valor)}</div>
       <button class="edt" onclick="editarDia('${d.id}')">✎</button>
@@ -875,41 +896,44 @@ function render(){
     </div>`).join('')||'<div class="vazio">Nada encontrado.</div>';
   document.getElementById('totalFiltro').innerHTML=`<span>${lista.length} lançamento(s)</span><b>${brl(soma(lista))}</b>`;
 
-  /* investimentos */
-  const invMes=mes.dia.filter(d=>d.tipo==='investimento');
+  /* investimentos: investido menos resgatado */
+  const movMes=mes.dia.filter(d=>d.tipo==='investimento'||d.tipo==='resgate');
+  const investidoMes=soma(mes.dia.filter(d=>d.tipo==='investimento'));
+  const resgatadoMes=soma(mes.dia.filter(d=>d.tipo==='resgate'));
   const porCatInv=invPorCategoria();
   const totalInv=totalInvestido();
   document.getElementById('heroInv').innerHTML=
    `<small>Total guardado</small>
     <div class="big">${brl(totalInv)}</div>
-    <div class="linha"><span>Investido neste mês</span><b>${brl(soma(invMes))}</b></div>`;
+    <div class="linha"><span>Investido ${brl(investidoMes)} · Resgatado ${brl(resgatadoMes)}</span><b>${brl(investidoMes-resgatadoMes)}</b></div>`;
   const nomesInv=[...new Set([...dados.catsInv,...Object.keys(porCatInv),...Object.keys(dados.metasInv)])];
   const blocos=nomesInv.filter(n=>porCatInv[n]||dados.metasInv[n]).sort((a,b)=>(porCatInv[b]||0)-(porCatInv[a]||0)).map(n=>{
     const v=porCatInv[n]||0;
     const pctTotal=totalInv>0?Math.round(v/totalInv*100):0;
     const m=dados.metasInv[n];
-    let barra='',subl=`<span>${pctTotal}% do total investido</span>`;
+    let barra='',subl=`<span>${pctTotal}% do total guardado</span>`;
     if(m){
-      const p=Math.min(v/m*100,100);
+      const p=Math.max(0,Math.min(v/m*100,100));
       barra=`<div class="barra"><i class="azul" style="width:${p}%"></i></div>`;
       subl=`<span>${pctTotal}% do total</span><span>meta ${brl(m)} · ${Math.round(v/m*100)}%</span>`;
     }
     const nSeg=esc(n).replace(/'/g,'&#39;');
-    return `<div class="invcat"><div class="topl"><span class="rot" style="display:flex;gap:10px;align-items:center"><span class="ic">${icone(n)}</span>${esc(n)}</span><b class="inv">${brl(v)}</b></div>${barra}<div class="subl">${subl}</div><button class="metab" onclick="abrirMetaCat('${nSeg}')">${m?'Editar meta':'Definir meta'}</button></div>`;
+    return `<div class="invcat"><div class="topl"><span style="display:flex;gap:10px;align-items:center"><span class="ic">${icone(n)}</span>${esc(n)}</span><b class="inv">${brl(v)}</b></div>${barra}<div class="subl">${subl}</div><button class="metab" onclick="abrirMetaCat('${nSeg}')">${m?'Editar meta':'Definir meta'}</button></div>`;
   }).join('');
   document.getElementById('invPorCat').innerHTML='<h2>Por categoria</h2>'+(blocos||'<div class="vazio">Lance um investimento no Dia a dia escolhendo a categoria.</div>');
-  document.getElementById('listaInv').innerHTML=[...invMes].reverse().map(d=>
+  document.getElementById('listaInv').innerHTML=[...movMes].reverse().map(d=>
    `<div class="item">
-      <div class="ic">${icone(d.cat||'Outros')}</div>
-      <div class="nome"><div>${esc(d.desc)}</div><div class="sub">${d.data} · ${d.forma}${d.cat?' · '+esc(d.cat):''}</div></div>
-      <div class="val inv">${brl(d.valor)}</div>
+      <div class="ic">${d.tipo==='resgate'?'↩️':icone(d.cat||'Outros')}</div>
+      <div class="nome"><div>${esc(d.desc)}</div><div class="sub">${d.data} · ${d.tipo}${d.cat?' · '+esc(d.cat):''}</div></div>
+      <div class="val ${d.tipo==='resgate'?'pos':'inv'}">${d.tipo==='resgate'?'-':'+'}${brl(d.valor)}</div>
       <button class="edt" onclick="editarDia('${d.id}')">✎</button>
       <button class="del" onclick="removerDia('${d.id}')">✕</button>
-    </div>`).join('')||'<div class="vazio">Nenhum investimento neste mês.</div>';
+    </div>`).join('')||'<div class="vazio">Nenhum movimento neste mês.</div>';
 
   renderAno();
 
   document.getElementById('chipsGasto').innerHTML=chipsHtml(dados.catsGasto,'gasto');
+  document.getElementById('chipsGanho').innerHTML=chipsHtml(dados.catsGanho,'ganho');
   document.getElementById('chipsInv').innerHTML=chipsHtml(dados.catsInv,'inv');
   document.getElementById('metaVal').value=dados.meta||'';
   document.getElementById('cartFecha').value=dados.cartao.fecha;
@@ -919,19 +943,20 @@ function render(){
 
 function renderAno(){
   document.getElementById('anoTitulo').textContent=anoVer;
-  let tGan=0,tCon=0,tGas=0,tInv=0;
+  let tGan=0,tCon=0,tGas=0,tInv=0,tRes=0;
   let linhas='';
   for(let m=0;m<12;m++){
     const k=anoVer+'-'+String(m+1).padStart(2,'0');
     const mes=dados.meses[k]||{dia:[]};
     const dd=mes.dia||[];
     const gan=soma(ganhosDoMes(k))+soma(dd.filter(d=>d.tipo==='ganho'));
+    const res=soma(dd.filter(d=>d.tipo==='resgate'));
     const con=soma(contasDoMes(k));
     const gas=soma(dd.filter(d=>d.tipo==='gasto'&&d.forma!=='Crédito'));
     const inv=soma(dd.filter(d=>d.tipo==='investimento'));
-    tGan+=gan;tCon+=con;tGas+=gas;tInv+=inv;
-    const sobra=gan-con-gas-inv;
-    if(gan||con||gas||inv)linhas+=`<tr><td>${NMES[m]}</td><td class="pos">${brl(gan)}</td><td class="neg">${brl(con+gas)}</td><td class="inv">${brl(inv)}</td><td class="${sobra<0?'neg':'pos'}">${brl(sobra)}</td></tr>`;
+    tGan+=gan;tRes+=res;tCon+=con;tGas+=gas;tInv+=inv;
+    const sobra=gan+res-con-gas-inv;
+    if(gan||res||con||gas||inv)linhas+=`<tr><td>${NMES[m]}</td><td class="pos">${brl(gan+res)}</td><td class="neg">${brl(con+gas)}</td><td class="inv">${brl(inv)}</td><td class="${sobra<0?'neg':'pos'}">${brl(sobra)}</td></tr>`;
   }
   const eco=tGan-tCon-tGas-tInv;
   document.getElementById('anoResumo').innerHTML=
@@ -940,7 +965,8 @@ function renderAno(){
     <div class="cat"><span>Contas fixas + fatura</span><b class="neg">${brl(tCon)}</b></div>
     <div class="cat"><span>Gastos do dia a dia</span><b class="neg">${brl(tGas)}</b></div>
     <div class="cat"><span>Investido</span><b class="inv">${brl(tInv)}</b></div>
-    <div class="cat tot"><span>Economia (sobra)</span><b class="${eco<0?'neg':'pos'}">${brl(eco)}</b></div>`;
+    <div class="cat"><span>Resgatado dos investimentos</span><b class="pos">${brl(tRes)}</b></div>
+    <div class="cat tot"><span>Economia (sobra, sem contar resgates)</span><b class="${eco<0?'neg':'pos'}">${brl(eco)}</b></div>`;
   document.getElementById('anoTabela').innerHTML=
    `<h2>Mês a mês</h2>
     <table class="tabela"><tr><th>Mês</th><th>Entrou</th><th>Saiu</th><th>Investiu</th><th>Sobrou</th></tr>${linhas||'<tr><td colspan="5" class="vazio">Sem dados neste ano.</td></tr>'}</table>`;
